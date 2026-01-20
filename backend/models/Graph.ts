@@ -20,7 +20,6 @@ export interface IEdge {
 
 // Graph document interface
 export interface IGraph extends Document {
-  id: string;
   title: string;
   nodes: INode[];
   edges: IEdge[];
@@ -30,7 +29,6 @@ export interface IGraph extends Document {
 }
 
 export interface IGraphPayload {
-  id?: string;
   title: string;
   nodes: INode[];
   edges: IEdge[];
@@ -61,7 +59,6 @@ const EdgeSchema: Schema = new Schema({
 
 const GraphSchema: Schema = new Schema(
   {
-    id: { type: String, required: true, unique: true, default: () => `graph_${Date.now()}` },
     title: { type: String, required: true },
     nodes: { type: [NodeSchema], default: [] },
     edges: { type: [EdgeSchema], default: [] },
@@ -71,7 +68,16 @@ const GraphSchema: Schema = new Schema(
   },
   {
     collection: "graphs",
-  }
+    toJSON: {
+      virtuals: true,
+      transform: function (doc, ret: any) {
+        ret.id = ret._id;
+        delete ret._id;
+        delete ret.__v;
+      },
+    },
+    toObject: { virtuals: true },
+  },
 );
 
 // Export model

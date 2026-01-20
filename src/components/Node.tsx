@@ -145,7 +145,7 @@ const BaseNode: React.FC<NodeProps<BaseNodeData>> = (props) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editLabel, setEditLabel] = useState(data.label);
   const [editDescription, setEditDescription] = useState(
-    data.description || ""
+    data.description || "",
   );
 
   const labelInputRef = useRef<HTMLInputElement>(null);
@@ -170,8 +170,8 @@ const BaseNode: React.FC<NodeProps<BaseNodeData>> = (props) => {
                 description: editDescription.trim(),
               },
             }
-          : node
-      )
+          : node,
+      ),
     );
     setIsEditing(false);
   };
@@ -209,7 +209,7 @@ const BaseNode: React.FC<NodeProps<BaseNodeData>> = (props) => {
     <div
       className={twMerge(
         "flex flex-col w-[250px] relative bg-[#1E293B] rounded-lg",
-        selected && "box-shadow-lg"
+        selected && "box-shadow-lg",
       )}
       style={{
         backgroundImage: config.bgGradient,
@@ -240,14 +240,14 @@ const BaseNode: React.FC<NodeProps<BaseNodeData>> = (props) => {
             <>
               <button
                 onClick={handleSave}
-                className="p-1 text-green-400 hover:text-green-300 transition-colors"
+                className="p-1.5 rounded bg-green-500/10 hover:bg-green-500/20 text-green-400 hover:text-green-300 transition-colors"
                 title="Save changes"
               >
                 <FiCheck size={14} />
               </button>
               <button
                 onClick={handleCancel}
-                className="p-1 text-red-400 hover:text-red-300 transition-colors"
+                className="p-1.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
                 title="Cancel editing"
               >
                 <FiX size={14} />
@@ -256,7 +256,7 @@ const BaseNode: React.FC<NodeProps<BaseNodeData>> = (props) => {
           ) : (
             <button
               onClick={() => setIsEditing(true)}
-              className="p-1 text-gray-400 hover:text-white transition-colors"
+              className="p-1.5 rounded bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
               title="Edit node"
             >
               <FiEdit2 size={14} />

@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useState, useRef, useEffect } from "react";
 import {
   ReactFlow,
   type NodeChange,
@@ -13,6 +13,7 @@ import {
   type ReactFlowInstance,
   type NodeMouseHandler,
 } from "reactflow";
+import { toast } from "react-hot-toast";
 
 import "reactflow/dist/style.css";
 import type { NodeType } from "./Node";
@@ -20,7 +21,7 @@ import BaseNode from "./Node";
 import Sidebar from "./Sidebar";
 import ContextMenu from "./ContextMenu";
 import type { Graph } from "../types/graph";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useCreateGraph, useUpdateGraph } from "../api/hooks/useGraphs";
 
 export interface Node {
@@ -50,12 +51,22 @@ interface EditorProps {
 
 const Editor: React.FC<EditorProps> = ({ graph }) => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [nodes, setNodes] = useState<Node[]>(graph?.nodes || []);
   const [edges, setEdges] = useState<Edge[]>(graph?.edges || []);
   const [title, setTitle] = useState<string>(
     graph?.title || "Untitled Mind Map",
   );
+  // Sync state with graph prop
+  useEffect(() => {
+    if (graph) {
+      setNodes(graph.nodes || []);
+      setEdges(graph.edges || []);
+      setTitle(graph.title || "Untitled Mind Map");
+    }
+  }, [graph]);
 
+  // React Query mutations
   // React Query mutations
   const createGraphMutation = useCreateGraph();
   const updateGraphMutation = useUpdateGraph();
@@ -152,14 +163,18 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
           id,
           ...graphData,
         });
-        console.log("✅ Graph updated successfully");
+        toast.success("Graph updated successfully");
       } else {
         // Create new graph
-        await createGraphMutation.mutateAsync(graphData);
-        console.log("✅ Graph created successfully");
+        const newGraph = await createGraphMutation.mutateAsync(graphData);
+        if (newGraph && newGraph.id) {
+          toast.success("Graph created successfully");
+          navigate(`/${newGraph.id}`, { replace: true });
+        }
       }
     } catch (error) {
       console.error("💥 Editor: Error saving graph:", error);
+      toast.error("Failed to save graph");
     }
   }, [
     nodes,

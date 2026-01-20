@@ -11,11 +11,14 @@ import {
   BackgroundVariant,
   Controls,
   type ReactFlowInstance,
+  type NodeMouseHandler,
 } from "reactflow";
+
 import "reactflow/dist/style.css";
 import type { NodeType } from "./Node";
 import BaseNode from "./Node";
 import Sidebar from "./Sidebar";
+import ContextMenu from "./ContextMenu";
 import type { Graph } from "../types/graph";
 import { useParams } from "react-router-dom";
 import { useCreateGraph, useUpdateGraph } from "../api/hooks/useGraphs";
@@ -50,7 +53,7 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
   const [nodes, setNodes] = useState<Node[]>(graph?.nodes || []);
   const [edges, setEdges] = useState<Edge[]>(graph?.edges || []);
   const [title, setTitle] = useState<string>(
-    graph?.title || "Untitled Mind Map"
+    graph?.title || "Untitled Mind Map",
   );
 
   // React Query mutations
@@ -61,20 +64,58 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance | null>(null);
 
+  const [contextMenu, setContextMenu] = useState<{
+    id: string;
+    top: number;
+    left: number;
+  } | null>(null);
+
+  const handleCloseContextMenu = useCallback(() => setContextMenu(null), []);
+
+  const onNodeContextMenu: NodeMouseHandler = useCallback(
+    (event, node) => {
+      // Prevent native context menu
+      event.preventDefault();
+
+      // Get the container bounds to calculate relative position
+      const containerBounds = reactFlowWrapper.current?.getBoundingClientRect();
+
+      if (containerBounds) {
+        setContextMenu({
+          id: node.id,
+          top: event.clientY - containerBounds.top,
+          left: event.clientX - containerBounds.left,
+        });
+      }
+    },
+    [setContextMenu],
+  );
+
+  const deleteNode = useCallback(
+    (id: string) => {
+      setNodes((nodes) => nodes.filter((node) => node.id !== id));
+      setEdges((edges) =>
+        edges.filter((edge) => edge.source !== id && edge.target !== id),
+      );
+      setContextMenu(null);
+    },
+    [setNodes, setEdges],
+  );
+
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
       setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
-    []
+    [],
   );
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) =>
       setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
-    []
+    [],
   );
   const onConnect = useCallback(
     (params: Connection) =>
       setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
-    []
+    [],
   );
 
   const addNode = useCallback((nodeType: string) => {
@@ -151,7 +192,7 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
   const clearGraph = useCallback(() => {
     if (
       window.confirm(
-        "Are you sure you want to clear all nodes and connections? This action cannot be undone."
+        "Are you sure you want to clear all nodes and connections? This action cannot be undone.",
       )
     ) {
       setNodes([]);
@@ -195,7 +236,7 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
 
       setNodes((nds) => nds.concat(newNode));
     },
-    [reactFlowInstance]
+    [reactFlowInstance],
   );
 
   return (
@@ -208,7 +249,7 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
         title={title}
         onTitleChange={setTitle}
       />
-      <div className="w-full h-full" ref={reactFlowWrapper}>
+      <div className="w-full h-full relative" ref={reactFlowWrapper}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -219,6 +260,7 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
           onInit={setReactFlowInstance}
           onDrop={onDrop}
           onDragOver={onDragOver}
+          onNodeContextMenu={onNodeContextMenu}
           fitView
         >
           <Background
@@ -253,6 +295,14 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
             }}
           />
         </ReactFlow>
+        {contextMenu && (
+          <ContextMenu
+            x={contextMenu.left}
+            y={contextMenu.top}
+            onDelete={() => deleteNode(contextMenu.id)}
+            onClose={handleCloseContextMenu}
+          />
+        )}
       </div>
     </div>
   );

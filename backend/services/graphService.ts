@@ -1,4 +1,5 @@
-import Graph, {  IGraph, IGraphPayload } from "../models/Graph";
+import mongoose from "mongoose";
+import Graph, { IGraph, IGraphPayload } from "../models/Graph";
 
 /**
  * Fetches all graphs from the database
@@ -22,6 +23,11 @@ export const getAllGraphs = async (): Promise<IGraph[]> => {
  */
 export const getGraphById = async (id: string): Promise<IGraph | null> => {
   try {
+    const isObjectId = mongoose.Types.ObjectId.isValid(id);
+    if (isObjectId) {
+      const graph = await Graph.findById(id);
+      if (graph) return graph;
+    }
     return await Graph.findOne({ id });
   } catch (error) {
     console.error("Error fetching graph:", error);
@@ -31,7 +37,7 @@ export const getGraphById = async (id: string): Promise<IGraph | null> => {
 
 export const saveGraph = async (
   id: string | undefined,
-  data: IGraphPayload
+  data: IGraphPayload,
 ): Promise<IGraph> => {
   try {
     const { title, nodes, edges, nodeCount, lastModified, created } = data;
@@ -78,7 +84,7 @@ export const saveGraph = async (
  */
 export const updateGraph = async (
   id: string,
-  data: IGraphPayload
+  data: IGraphPayload,
 ): Promise<IGraph> => {
   try {
     const { title, nodes, edges, nodeCount, lastModified } = data;

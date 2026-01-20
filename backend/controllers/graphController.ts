@@ -10,20 +10,28 @@ import { IGraphPayload } from "../models/Graph";
  */
 export const getGraphsController = async (req: Request, res: Response) => {
   try {
-    const { id } = req.query;
-    if (id && typeof id === "string") {
-      const graph = await graphService.getGraphById(id);
-      if (!graph) {
-        return res.status(404).json({ error: "Mind map not found" });
-      }
-      res.json(graph);
-    } else {
-      const graphs = await graphService.getAllGraphs();
-      res.json(graphs);
-    }
+    const graphs = await graphService.getAllGraphs();
+    res.json(graphs);
   } catch (err) {
     console.error("💥 Backend: Error in getGraphsController:", err);
     res.status(500).json({ error: "Failed to fetch graphs" });
+  }
+};
+
+export const getGraphByIdController = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id || typeof id !== "string") {
+      return res.status(400).json({ error: "Graph ID is required" });
+    }
+    const graph = await graphService.getGraphById(id);
+    if (!graph) {
+      return res.status(404).json({ error: "Graph not found" });
+    }
+    res.json(graph);
+  } catch (err) {
+    console.error("💥 Backend: Error in getGraphByIdController:", err);
+    res.status(500).json({ error: "Failed to fetch graph" });
   }
 };
 

@@ -12,6 +12,7 @@ import {
   Controls,
   type ReactFlowInstance,
   type NodeMouseHandler,
+  type EdgeMouseHandler,
 } from "reactflow";
 import { toast } from "react-hot-toast";
 
@@ -20,6 +21,7 @@ import type { NodeType } from "./Node";
 import BaseNode from "./Node";
 import Sidebar from "./Sidebar";
 import ContextMenu from "./ContextMenu";
+import EdgeContextMenu from "./EdgeContextMenu";
 import type { Graph } from "../types/graph";
 import { useParams, useNavigate } from "react-router-dom";
 import { useCreateGraph, useUpdateGraph } from "../api/hooks/useGraphs";
@@ -57,16 +59,106 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
   const [title, setTitle] = useState<string>(
     graph?.title || "Untitled Mind Map",
   );
+  const [description, setDescription] = useState<string>(
+    graph?.description || "",
+  );
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const initialStateRef = useRef<string | null>(null);
+  const lastSavedStateRef = useRef<string | null>(null);
+
+  // Track current state for unsaved changes detection
+  const getCurrentState = useCallback(() => {
+    // Sanitize nodes to remove React Flow specific internal state
+    const cleanNodes = nodes.map(({ id, type, position, data }) => ({
+      id,
+      type,
+      position: { x: Math.round(position.x), y: Math.round(position.y) }, // Round positions to avoid float diffs
+      data,
+    }));
+
+    // Sanitize edges
+    const cleanEdges = edges.map(({ id, source, target }) => ({
+      id,
+      source,
+      target,
+    }));
+
+    return JSON.stringify({
+      nodes: cleanNodes,
+      edges: cleanEdges,
+      title,
+      description,
+    });
+  }, [nodes, edges, title, description]);
+
+  // Initialize saved state on mount
+  useEffect(() => {
+    if (initialStateRef.current === null && nodes.length > 0) {
+      const state = getCurrentState();
+      initialStateRef.current = state;
+      lastSavedStateRef.current = state;
+    }
+  }, [getCurrentState, nodes.length]);
+
+  // Check for unsaved changes
+  useEffect(() => {
+    if (lastSavedStateRef.current === null) return;
+    const currentState = getCurrentState();
+    setHasUnsavedChanges(currentState !== lastSavedStateRef.current);
+  }, [getCurrentState]);
+
+  // Warn before browser close/refresh
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
   // Sync state with graph prop
   useEffect(() => {
     if (graph) {
       setNodes(graph.nodes || []);
       setEdges(graph.edges || []);
       setTitle(graph.title || "Untitled Mind Map");
+      setDescription(graph.description || "");
+
+      // We need to wait for the next render cycle for the state
+      // to update so getCurrentState() uses the new values.
+      // However, we can construct the string from the props directly here.
+      const cleanNodes = (graph.nodes || []).map(
+        ({ id, type, position, data }) => ({
+          id,
+          type,
+          position: { x: Math.round(position.x), y: Math.round(position.y) },
+          data,
+        }),
+      );
+
+      const cleanEdges = (graph.edges || []).map(({ id, source, target }) => ({
+        id,
+        source,
+        target,
+      }));
+
+      const state = JSON.stringify({
+        nodes: cleanNodes,
+        edges: cleanEdges,
+        title: graph.title || "Untitled Mind Map",
+        description: graph.description || "",
+      });
+      initialStateRef.current = state;
+      lastSavedStateRef.current = state;
+      setHasUnsavedChanges(false);
     }
   }, [graph]);
 
-  // React Query mutations
   // React Query mutations
   const createGraphMutation = useCreateGraph();
   const updateGraphMutation = useUpdateGraph();
@@ -75,20 +167,37 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance | null>(null);
 
+  // Node context menu state
   const [contextMenu, setContextMenu] = useState<{
     id: string;
     top: number;
     left: number;
   } | null>(null);
 
+  // Edge context menu state
+  const [edgeContextMenu, setEdgeContextMenu] = useState<{
+    id: string;
+    top: number;
+    left: number;
+  } | null>(null);
+
   const handleCloseContextMenu = useCallback(() => setContextMenu(null), []);
+  const handleCloseEdgeContextMenu = useCallback(
+    () => setEdgeContextMenu(null),
+    [],
+  );
+
+  // Close context menus when clicking elsewhere
+  const handlePaneClick = useCallback(() => {
+    setContextMenu(null);
+    setEdgeContextMenu(null);
+  }, []);
 
   const onNodeContextMenu: NodeMouseHandler = useCallback(
     (event, node) => {
-      // Prevent native context menu
       event.preventDefault();
+      setEdgeContextMenu(null);
 
-      // Get the container bounds to calculate relative position
       const containerBounds = reactFlowWrapper.current?.getBoundingClientRect();
 
       if (containerBounds) {
@@ -102,15 +211,43 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
     [setContextMenu],
   );
 
+  const onEdgeContextMenu: EdgeMouseHandler = useCallback(
+    (event, edge) => {
+      event.preventDefault();
+      setContextMenu(null);
+
+      const containerBounds = reactFlowWrapper.current?.getBoundingClientRect();
+
+      if (containerBounds) {
+        setEdgeContextMenu({
+          id: edge.id,
+          top: event.clientY - containerBounds.top,
+          left: event.clientX - containerBounds.left,
+        });
+      }
+    },
+    [setEdgeContextMenu],
+  );
+
   const deleteNode = useCallback(
-    (id: string) => {
-      setNodes((nodes) => nodes.filter((node) => node.id !== id));
+    (nodeId: string) => {
+      setNodes((nodes) => nodes.filter((node) => node.id !== nodeId));
       setEdges((edges) =>
-        edges.filter((edge) => edge.source !== id && edge.target !== id),
+        edges.filter(
+          (edge) => edge.source !== nodeId && edge.target !== nodeId,
+        ),
       );
       setContextMenu(null);
     },
     [setNodes, setEdges],
+  );
+
+  const deleteEdge = useCallback(
+    (edgeId: string) => {
+      setEdges((edges) => edges.filter((edge) => edge.id !== edgeId));
+      setEdgeContextMenu(null);
+    },
+    [setEdges],
   );
 
   const onNodesChange = useCallback(
@@ -131,7 +268,7 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
 
   const addNode = useCallback((nodeType: string) => {
     const newNode: Node = {
-      id: `n${Date.now()}`, // Use timestamp for unique IDs
+      id: `n${Date.now()}`,
       type: "custom",
       position: {
         x: Math.random() * 400 + 100,
@@ -146,10 +283,29 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
     setNodes((nds) => [...nds, newNode]);
   }, []);
 
-  const saveGraphApi = useCallback(async () => {
+  // Save graph function
+  const saveGraph = useCallback(async () => {
+    if (isSaving) return;
+
+    // Validation
+    if (nodes.length === 0) {
+      toast.error(
+        "Cannot save an empty mind map. Please add at least one node.",
+      );
+      return;
+    }
+
+    if (!title.trim() || title.trim() === "Untitled Mind Map") {
+      toast.error("Please provide a valid title for your mind map.");
+      return;
+    }
+
+    setIsSaving(true);
     try {
       const graphData = {
+        id: id || undefined,
         title,
+        description,
         nodes,
         edges,
         nodeCount: nodes.length,
@@ -159,50 +315,60 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
 
       if (id) {
         // Update existing graph
-        await updateGraphMutation.mutateAsync({
-          id,
-          ...graphData,
-        });
-        toast.success("Graph updated successfully");
+        const updatedGraph = await updateGraphMutation.mutateAsync(graphData);
+        if (updatedGraph) {
+          toast.success("Graph saved successfully");
+          lastSavedStateRef.current = getCurrentState();
+          setHasUnsavedChanges(false);
+        } else {
+          toast.error("Failed to save graph");
+        }
       } else {
         // Create new graph
-        const newGraph = await createGraphMutation.mutateAsync(graphData);
-        if (newGraph && newGraph.id) {
-          toast.success("Graph created successfully");
-          navigate(`/${newGraph.id}`, { replace: true });
+        const result = await createGraphMutation.mutateAsync(graphData);
+        if (result.success && result.data) {
+          const newGraph = result.data;
+          if (newGraph && newGraph.id) {
+            toast.success("Graph created successfully");
+            lastSavedStateRef.current = getCurrentState();
+            setHasUnsavedChanges(false);
+            navigate(`/${newGraph.id}`, { replace: true });
+          }
+        } else {
+          const errorMessage = result.error?.message || "Failed to save graph";
+          toast.error(errorMessage);
         }
       }
     } catch (error) {
       console.error("💥 Editor: Error saving graph:", error);
       toast.error("Failed to save graph");
+    } finally {
+      setIsSaving(false);
     }
   }, [
     nodes,
     edges,
     title,
+    description,
     id,
     graph?.created,
     createGraphMutation,
     updateGraphMutation,
+    navigate,
+    isSaving,
+    getCurrentState,
   ]);
 
+  // Navigate back with confirmation if there are unsaved changes
   const handleBack = useCallback(() => {
-    // You can implement different back behaviors here:
-    // Option 1: Go back in browser history
-    window.history.back();
-
-    // Option 2: Navigate to a specific route (if using React Router)
-    // navigate('/dashboard');
-
-    // Option 3: Reset to initial state
-    // setNodes(initialNodes);
-    // setEdges(initialEdges);
-
-    // Option 4: Show confirmation and clear
-    // if (window.confirm('Go back? Unsaved changes will be lost.')) {
-    //   // Handle navigation
-    // }
-  }, []);
+    if (hasUnsavedChanges) {
+      const confirmLeave = window.confirm(
+        "You have unsaved changes. Are you sure you want to leave?",
+      );
+      if (!confirmLeave) return;
+    }
+    navigate("/");
+  }, [navigate, hasUnsavedChanges]);
 
   const clearGraph = useCallback(() => {
     if (
@@ -227,12 +393,10 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
       const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
       const nodeType = event.dataTransfer.getData("application/reactflow");
 
-      // Check if the dropped element is a valid node type
       if (typeof nodeType === "undefined" || !nodeType || !reactFlowBounds) {
         return;
       }
 
-      // Calculate position relative to the canvas
       const position = reactFlowInstance?.project({
         x: event.clientX - reactFlowBounds.left,
         y: event.clientY - reactFlowBounds.top,
@@ -258,11 +422,15 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
     <div className="relative w-full h-full">
       <Sidebar
         onAddNode={addNode}
-        onSave={saveGraphApi}
+        onSave={saveGraph}
         onClear={clearGraph}
         onBack={handleBack}
         title={title}
         onTitleChange={setTitle}
+        description={description}
+        onDescriptionChange={setDescription}
+        isSaving={isSaving}
+        hasUnsavedChanges={hasUnsavedChanges}
       />
       <div className="w-full h-full relative" ref={reactFlowWrapper}>
         <ReactFlow
@@ -276,6 +444,8 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
           onDrop={onDrop}
           onDragOver={onDragOver}
           onNodeContextMenu={onNodeContextMenu}
+          onEdgeContextMenu={onEdgeContextMenu}
+          onPaneClick={handlePaneClick}
           fitView
         >
           <Background
@@ -316,6 +486,14 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
             y={contextMenu.top}
             onDelete={() => deleteNode(contextMenu.id)}
             onClose={handleCloseContextMenu}
+          />
+        )}
+        {edgeContextMenu && (
+          <EdgeContextMenu
+            x={edgeContextMenu.left}
+            y={edgeContextMenu.top}
+            onDelete={() => deleteEdge(edgeContextMenu.id)}
+            onClose={handleCloseEdgeContextMenu}
           />
         )}
       </div>

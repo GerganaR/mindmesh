@@ -18,6 +18,8 @@ import {
   FiMenu,
   FiEdit2,
   FiArrowLeft,
+  FiLoader,
+  FiCheck,
 } from "react-icons/fi";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,6 +31,10 @@ interface SidebarProps {
   onBack?: () => void;
   title?: string;
   onTitleChange?: (title: string) => void;
+  description?: string;
+  onDescriptionChange?: (desc: string) => void;
+  isSaving?: boolean;
+  hasUnsavedChanges?: boolean;
 }
 
 // Node type configuration with colors and icons
@@ -134,7 +140,18 @@ const NODE_TYPES = [
   },
 ];
 
-const Sidebar = ({ onAddNode, onSave, onClear, onBack, title, onTitleChange }: SidebarProps) => {
+const Sidebar = ({
+  onAddNode,
+  onSave,
+  onClear,
+  onBack,
+  title,
+  onTitleChange,
+  description,
+  onDescriptionChange,
+  isSaving,
+  hasUnsavedChanges,
+}: SidebarProps) => {
   const [isOpen, setIsOpen] = useState(true);
 
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
@@ -216,16 +233,24 @@ const Sidebar = ({ onAddNode, onSave, onClear, onBack, title, onTitleChange }: S
                       <FiEdit2 className="text-indigo-400" size={16} />
                     </div>
                     <h3 className="text-white font-semibold text-sm">
-                      Mind Map Title
+                      Mind Map Details
                     </h3>
                   </div>
-                  <input
-                    type="text"
-                    className="w-full bg-white/10 text-white font-medium text-base px-4 py-3 rounded-xl border border-white/20 focus:border-indigo-400/60 focus:bg-white/15 focus:outline-none transition-all duration-200 placeholder-gray-400"
-                    placeholder="Enter your mind map title..."
-                    defaultValue={title}
-                    onChange={(e) => onTitleChange?.(e.target.value)}
-                  />
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      className="w-full bg-white/10 text-white font-medium text-base px-4 py-3 rounded-xl border border-white/20 focus:border-indigo-400/60 focus:bg-white/15 focus:outline-none transition-all duration-200 placeholder-gray-400"
+                      placeholder="Enter title..."
+                      defaultValue={title}
+                      onChange={(e) => onTitleChange?.(e.target.value)}
+                    />
+                    <textarea
+                      className="w-full bg-white/10 text-gray-300 text-sm px-4 py-3 rounded-xl border border-white/20 focus:border-indigo-400/60 focus:bg-white/15 focus:outline-none transition-all duration-200 placeholder-gray-400 resize-none h-24"
+                      placeholder="Enter description (optional)..."
+                      defaultValue={description}
+                      onChange={(e) => onDescriptionChange?.(e.target.value)}
+                    />
+                  </div>
                 </div>
                 {/* Add Node Section */}
                 <div className="mb-6">
@@ -257,7 +282,7 @@ const Sidebar = ({ onAddNode, onSave, onClear, onBack, title, onTitleChange }: S
                         <button
                           onClick={() => onAddNode(nodeType.type)}
                           onDragStart={(
-                            event: React.DragEvent<HTMLButtonElement>
+                            event: React.DragEvent<HTMLButtonElement>,
                           ) => onDragStart(event, nodeType.type)}
                           draggable
                           className={`
@@ -307,15 +332,41 @@ const Sidebar = ({ onAddNode, onSave, onClear, onBack, title, onTitleChange }: S
                   <div className="space-y-3">
                     <motion.button
                       onClick={onSave}
-                      className="w-full flex items-center gap-3 p-2 rounded-xl border border-green-500/40 bg-green-500/20 hover:bg-green-500/30 focus:outline-none focus:ring-2 focus:ring-white/20"
+                      disabled={isSaving}
+                      className={`w-full flex items-center gap-3 p-2 rounded-xl border focus:outline-none focus:ring-2 focus:ring-white/20 ${
+                        isSaving
+                          ? "border-gray-500/40 bg-gray-500/20 cursor-not-allowed"
+                          : "border-green-500/40 bg-green-500/20 hover:bg-green-500/30"
+                      }`}
                       title="Save mind map"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      whileHover={isSaving ? {} : { scale: 1.02 }}
+                      whileTap={isSaving ? {} : { scale: 0.98 }}
                     >
-                      <FiSave className="text-green-400" size={18} />
-                      <span className="text-green-400 font-medium">
-                        Save Mind Map
+                      {isSaving ? (
+                        <FiLoader
+                          className="text-gray-400 animate-spin"
+                          size={18}
+                        />
+                      ) : hasUnsavedChanges ? (
+                        <FiSave className="text-green-400" size={18} />
+                      ) : (
+                        <FiCheck className="text-green-400" size={18} />
+                      )}
+                      <span
+                        className={
+                          isSaving ? "text-gray-400" : "text-green-400"
+                        }
+                        style={{ fontWeight: 500 }}
+                      >
+                        {isSaving
+                          ? "Saving..."
+                          : hasUnsavedChanges
+                            ? "Save Mind Map"
+                            : "Saved"}
                       </span>
+                      {hasUnsavedChanges && !isSaving && (
+                        <span className="ml-auto w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                      )}
                     </motion.button>
 
                     <motion.button

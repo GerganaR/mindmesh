@@ -21,6 +21,7 @@ export interface IEdge {
 // Graph document interface
 export interface IGraph extends Document {
   title: string;
+  description?: string;
   nodes: INode[];
   edges: IEdge[];
   nodeCount: number;
@@ -30,6 +31,7 @@ export interface IGraph extends Document {
 
 export interface IGraphPayload {
   title: string;
+  description?: string;
   nodes: INode[];
   edges: IEdge[];
   nodeCount: number;
@@ -60,6 +62,7 @@ const EdgeSchema: Schema = new Schema({
 const GraphSchema: Schema = new Schema(
   {
     title: { type: String, required: true },
+    description: { type: String, required: false },
     nodes: { type: [NodeSchema], default: [] },
     edges: { type: [EdgeSchema], default: [] },
     nodeCount: { type: Number, default: 0 },

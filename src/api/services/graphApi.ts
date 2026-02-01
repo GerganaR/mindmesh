@@ -10,6 +10,7 @@ const ENDPOINTS = {
 export type SaveGraphParams = {
   id?: string;
   title: string;
+  description?: string;
   nodes: Node[];
   edges: Edge[];
   nodeCount: number;
@@ -38,14 +39,68 @@ export const fetchAllGraphs = async (): Promise<Graph[]> => {
   }
 };
 
+// Define API Response for Graph Operations
+export interface GraphApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: {
+    status: number;
+    message: string;
+  };
+}
+
 // Save graph
 export const saveGraph = async (
-  params: SaveGraphParams
-): Promise<Graph | null> => {
-  const { title, nodes, edges, nodeCount, lastModified, created } = params;
+  params: SaveGraphParams,
+): Promise<GraphApiResponse<Graph>> => {
+  const { title, description, nodes, edges, nodeCount, lastModified, created } =
+    params;
   try {
     const response = await apiClient.post<Graph>(ENDPOINTS.graphs, {
       title,
+      description,
+      nodes,
+      edges,
+      nodeCount,
+      lastModified,
+      created,
+    });
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    console.error("❌ API: Failed to save mind map:", error);
+    // Extract backend error message if available
+    const status = error.response?.status || 500;
+    const message =
+      error.response?.data?.message || error.message || "Unknown error";
+    return {
+      success: false,
+      error: { status, message },
+    };
+  }
+};
+
+// Update graph
+export const updateGraph = async (
+  params: SaveGraphParams,
+): Promise<Graph | null> => {
+  const {
+    id,
+    title,
+    description,
+    nodes,
+    edges,
+    nodeCount,
+    lastModified,
+    created,
+  } = params;
+  if (!id) {
+    throw new Error("ID is required for updating a graph");
+  }
+
+  try {
+    const response = await apiClient.put<Graph>(ENDPOINTS.graphById(id), {
+      title,
+      description,
       nodes,
       edges,
       nodeCount,
@@ -54,34 +109,6 @@ export const saveGraph = async (
     });
     return response.data;
   } catch (error) {
-    console.error("❌ API: Failed to save/update mind map:", error);
-    return null;
-  }
-};
-
-// Update graph
-export const updateGraph = async (
-  params: SaveGraphParams
-): Promise<Graph | null> => {
-  const { id, title, nodes, edges, nodeCount, lastModified, created } = params;
-  if (!id) {
-    throw new Error("ID is required for updating a graph");
-  }
-
-  try {
-    const response = await apiClient.put<{ success: boolean; graph: Graph }>(
-      ENDPOINTS.graphs + "/" + id,
-      {
-        title,
-        nodes,
-        edges,
-        nodeCount,
-        lastModified,
-        created,
-      }
-    );
-    return response.data.graph;
-  } catch (error) {
     console.error("❌ API: Failed to update graph:", error);
     return null;
   }
@@ -89,11 +116,11 @@ export const updateGraph = async (
 
 // Delete graphs
 export const deleteGraph = async (
-  id: string
+  id: string,
 ): Promise<{ success: boolean }> => {
   try {
     const response = await apiClient.delete<{ success: boolean }>(
-      ENDPOINTS.graphById(id)
+      ENDPOINTS.graphById(id),
     );
     return response.data;
   } catch (error) {

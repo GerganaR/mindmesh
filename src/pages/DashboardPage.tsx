@@ -128,8 +128,8 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="h-screen bg-gray-900 p-6">
+      <div className="sm:max-w-[98%] md:max-w-[90%] 2xl:max-w-[70%] mx-auto pb-2 h-full flex flex-col p-2">
         {/* Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
           <div>
@@ -171,164 +171,166 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* How to Use Guide */}
-        <HowToUse />
+        <div className="flex-1 overflow-y-auto pr-2">
+          {/* How to Use Guide */}
+          <HowToUse />
 
-        {/* Search Bar */}
-        {graphs.length > 0 && (
-          <motion.div
-            className="mb-6"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="relative max-w-md">
-              <FiSearch
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Search mind maps..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-10 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500/50 focus:bg-gray-800 transition-all"
-              />
+          {/* Search Bar */}
+          {graphs.length > 0 && (
+            <motion.div
+              className="mb-6"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="relative max-w-md">
+                <FiSearch
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
+                <input
+                  type="text"
+                  placeholder="Search mind maps..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-11 pr-10 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500/50 focus:bg-gray-800 transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg hover:bg-gray-700/50 text-gray-400 hover:text-white transition-colors"
+                  >
+                    <FiX size={16} />
+                  </button>
+                )}
+              </div>
               {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg hover:bg-gray-700/50 text-gray-400 hover:text-white transition-colors"
-                >
-                  <FiX size={16} />
-                </button>
+                <p className="text-sm text-gray-500 mt-2">
+                  Showing {filteredGraphs.length} of {graphs.length} mind maps
+                </p>
               )}
-            </div>
-            {searchQuery && (
-              <p className="text-sm text-gray-500 mt-2">
-                Showing {filteredGraphs.length} of {graphs.length} mind maps
-              </p>
-            )}
-          </motion.div>
-        )}
+            </motion.div>
+          )}
 
-        {/* Mind Maps Grid */}
-        {graphs.length === 0 ? (
-          <motion.div
-            className="text-center py-16"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              <FiGrid className="text-gray-600 text-4xl" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-400 mb-2">
-              No mind maps yet
-            </h3>
-            <p className="text-gray-500 mb-6">
-              Create your first mind map to start visualizing your ideas
-            </p>
-            <div className="flex gap-4 justify-center">
-              <motion.button
-                onClick={() => fileInputRef.current?.click()}
-                className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium border border-gray-600"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Upload Template
-              </motion.button>
-              <Link to="/new">
+          {/* Mind Maps Grid */}
+          {graphs.length === 0 ? (
+            <motion.div
+              className="text-center py-16"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                <FiGrid className="text-gray-600 text-4xl" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-400 mb-2">
+                No mind maps yet
+              </h3>
+              <p className="text-gray-500 mb-6">
+                Create your first mind map to start visualizing your ideas
+              </p>
+              <div className="flex gap-4 justify-center">
                 <motion.button
-                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium border border-gray-600"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  Create Mind Map
+                  Upload Template
                 </motion.button>
-              </Link>
-            </div>
-          </motion.div>
-        ) : filteredGraphs.length === 0 ? (
-          <motion.div
-            className="text-center py-16"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              <FiSearch className="text-gray-600 text-4xl" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-400 mb-2">
-              No results found
-            </h3>
-            <p className="text-gray-500 mb-4">
-              No mind maps match "{searchQuery}"
-            </p>
-            <button
-              onClick={() => setSearchQuery("")}
-              className="text-indigo-400 hover:text-indigo-300 font-medium"
+                <Link to="/new">
+                  <motion.button
+                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Create Mind Map
+                  </motion.button>
+                </Link>
+              </div>
+            </motion.div>
+          ) : filteredGraphs.length === 0 ? (
+            <motion.div
+              className="text-center py-16"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
             >
-              Clear search
-            </button>
-          </motion.div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-            <AnimatePresence mode="popLayout">
-              {filteredGraphs.map((graph: Graph, index: number) => (
-                <motion.div
-                  key={graph.id}
-                  layout
-                  className="bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-gray-600 transition-colors group"
-                  whileHover={{ y: -4 }}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ delay: index * 0.03 }}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <Link to={`/${graph.id}`} className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-white truncate hover:text-indigo-400 transition-colors">
-                        {graph.title}
-                      </h3>
-                      {graph.description && (
-                        <p className="text-sm text-gray-400 truncate mt-1">
-                          {graph.description}
-                        </p>
-                      )}
-                    </Link>
-                    <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Link to={`/${graph.id}`}>
+              <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                <FiSearch className="text-gray-600 text-4xl" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-400 mb-2">
+                No results found
+              </h3>
+              <p className="text-gray-500 mb-4">
+                No mind maps match "{searchQuery}"
+              </p>
+              <button
+                onClick={() => setSearchQuery("")}
+                className="text-indigo-400 hover:text-indigo-300 font-medium"
+              >
+                Clear search
+              </button>
+            </motion.div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+              <AnimatePresence mode="popLayout">
+                {filteredGraphs.map((graph: Graph, index: number) => (
+                  <motion.div
+                    key={graph.id}
+                    layout
+                    className="bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-gray-600 transition-colors group"
+                    whileHover={{ y: -4 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ delay: index * 0.03 }}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <Link to={`/${graph.id}`} className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-white truncate hover:text-indigo-400 transition-colors">
+                          {graph.title}
+                        </h3>
+                        {graph.description && (
+                          <p className="text-sm text-gray-400 truncate mt-1">
+                            {graph.description}
+                          </p>
+                        )}
+                      </Link>
+                      <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Link to={`/${graph.id}`}>
+                          <motion.button
+                            className="p-1.5 text-gray-400 hover:text-indigo-400 transition-colors rounded-lg hover:bg-gray-700/50"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <FiEdit3 size={16} />
+                          </motion.button>
+                        </Link>
                         <motion.button
-                          className="p-1.5 text-gray-400 hover:text-indigo-400 transition-colors rounded-lg hover:bg-gray-700/50"
+                          onClick={() => deleteGraph(graph.id, graph.title)}
+                          className="p-1.5 text-gray-400 hover:text-red-400 transition-colors rounded-lg hover:bg-gray-700/50"
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                         >
-                          <FiEdit3 size={16} />
+                          <FiTrash2 size={16} />
                         </motion.button>
-                      </Link>
-                      <motion.button
-                        onClick={() => deleteGraph(graph.id, graph.title)}
-                        className="p-1.5 text-gray-400 hover:text-red-400 transition-colors rounded-lg hover:bg-gray-700/50"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        <FiTrash2 size={16} />
-                      </motion.button>
+                      </div>
                     </div>
-                  </div>
-                  <Link to={`/${graph.id}`}>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span className="flex items-center gap-1 bg-gray-700/50 px-2 py-1 rounded-lg">
-                        {graph.nodeCount} nodes
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <FiCalendar size={14} />
-                        {new Date(graph.lastModified).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
+                    <Link to={`/${graph.id}`}>
+                      <div className="flex items-center justify-between text-sm text-gray-500">
+                        <span className="flex items-center gap-1 bg-gray-700/50 px-2 py-1 rounded-lg">
+                          {graph.nodeCount} nodes
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <FiCalendar size={14} />
+                          {new Date(graph.lastModified).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </Link>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

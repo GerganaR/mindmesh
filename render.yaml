@@ -1,0 +1,15 @@
+services:
+  # Backend API Service
+  - type: web
+    name: mindmesh-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: node dist/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false # You'll need to add this manually in Render dashboard
+      - key: FRONTEND_URL
+        sync: false # Add your Vercel URL here after frontend deployment

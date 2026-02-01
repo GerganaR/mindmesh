@@ -23,12 +23,10 @@ export const fetchGraphById = async (id: string): Promise<Graph | null> => {
     const response = await apiClient.get<Graph>(ENDPOINTS.graphById(id));
     return response.data;
   } catch (error) {
-    console.error("❌ API: Failed to fetch graph:", error);
     return null;
   }
 };
 
-// Get all graphs
 export const fetchAllGraphs = async (): Promise<Graph[]> => {
   try {
     const response = await apiClient.get<Graph[]>(ENDPOINTS.graphs);
@@ -39,7 +37,6 @@ export const fetchAllGraphs = async (): Promise<Graph[]> => {
   }
 };
 
-// Define API Response for Graph Operations
 export interface GraphApiResponse<T = any> {
   success: boolean;
   data?: T;
@@ -49,7 +46,6 @@ export interface GraphApiResponse<T = any> {
   };
 }
 
-// Save graph
 export const saveGraph = async (
   params: SaveGraphParams,
 ): Promise<GraphApiResponse<Graph>> => {
@@ -67,8 +63,6 @@ export const saveGraph = async (
     });
     return { success: true, data: response.data };
   } catch (error: any) {
-    console.error("❌ API: Failed to save mind map:", error);
-    // Extract backend error message if available
     const status = error.response?.status || 500;
     const message =
       error.response?.data?.message || error.message || "Unknown error";
@@ -79,7 +73,6 @@ export const saveGraph = async (
   }
 };
 
-// Update graph
 export const updateGraph = async (
   params: SaveGraphParams,
 ): Promise<Graph | null> => {
@@ -109,12 +102,10 @@ export const updateGraph = async (
     });
     return response.data;
   } catch (error) {
-    console.error("❌ API: Failed to update graph:", error);
     return null;
   }
 };
 
-// Delete graphs
 export const deleteGraph = async (
   id: string,
 ): Promise<{ success: boolean }> => {

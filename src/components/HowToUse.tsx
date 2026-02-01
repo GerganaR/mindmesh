@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiPlus,
-  FiUpload,
   FiMousePointer,
   FiEdit3,
   FiSave,

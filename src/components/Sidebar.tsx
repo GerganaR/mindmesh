@@ -37,7 +37,6 @@ interface SidebarProps {
   hasUnsavedChanges?: boolean;
 }
 
-// Node type configuration with colors and icons
 const NODE_TYPES = [
   {
     type: "start",

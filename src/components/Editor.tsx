@@ -67,17 +67,14 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
   const initialStateRef = useRef<string | null>(null);
   const lastSavedStateRef = useRef<string | null>(null);
 
-  // Track current state for unsaved changes detection
   const getCurrentState = useCallback(() => {
-    // Sanitize nodes to remove React Flow specific internal state
     const cleanNodes = nodes.map(({ id, type, position, data }) => ({
       id,
       type,
-      position: { x: Math.round(position.x), y: Math.round(position.y) }, // Round positions to avoid float diffs
+      position: { x: Math.round(position.x), y: Math.round(position.y) },
       data,
     }));
 
-    // Sanitize edges
     const cleanEdges = edges.map(({ id, source, target }) => ({
       id,
       source,
@@ -92,7 +89,6 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
     });
   }, [nodes, edges, title, description]);
 
-  // Initialize saved state on mount
   useEffect(() => {
     if (initialStateRef.current === null && nodes.length > 0) {
       const state = getCurrentState();
@@ -101,14 +97,12 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
     }
   }, [getCurrentState, nodes.length]);
 
-  // Check for unsaved changes
   useEffect(() => {
     if (lastSavedStateRef.current === null) return;
     const currentState = getCurrentState();
     setHasUnsavedChanges(currentState !== lastSavedStateRef.current);
   }, [getCurrentState]);
 
-  // Warn before browser close/refresh
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges) {
@@ -121,7 +115,6 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  // Sync state with graph prop
   useEffect(() => {
     if (graph) {
       setNodes(graph.nodes || []);
@@ -129,9 +122,6 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
       setTitle(graph.title || "Untitled Mind Map");
       setDescription(graph.description || "");
 
-      // We need to wait for the next render cycle for the state
-      // to update so getCurrentState() uses the new values.
-      // However, we can construct the string from the props directly here.
       const cleanNodes = (graph.nodes || []).map(
         ({ id, type, position, data }) => ({
           id,
@@ -159,7 +149,6 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
     }
   }, [graph]);
 
-  // React Query mutations
   const createGraphMutation = useCreateGraph();
   const updateGraphMutation = useUpdateGraph();
 
@@ -167,14 +156,12 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance | null>(null);
 
-  // Node context menu state
   const [contextMenu, setContextMenu] = useState<{
     id: string;
     top: number;
     left: number;
   } | null>(null);
 
-  // Edge context menu state
   const [edgeContextMenu, setEdgeContextMenu] = useState<{
     id: string;
     top: number;
@@ -187,7 +174,6 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
     [],
   );
 
-  // Close context menus when clicking elsewhere
   const handlePaneClick = useCallback(() => {
     setContextMenu(null);
     setEdgeContextMenu(null);
@@ -283,11 +269,9 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
     setNodes((nds) => [...nds, newNode]);
   }, []);
 
-  // Save graph function
   const saveGraph = useCallback(async () => {
     if (isSaving) return;
 
-    // Validation
     if (nodes.length === 0) {
       toast.error(
         "Cannot save an empty mind map. Please add at least one node.",
@@ -314,7 +298,6 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
       };
 
       if (id) {
-        // Update existing graph
         const updatedGraph = await updateGraphMutation.mutateAsync(graphData);
         if (updatedGraph) {
           toast.success("Graph saved successfully");
@@ -324,7 +307,6 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
           toast.error("Failed to save graph");
         }
       } else {
-        // Create new graph
         const result = await createGraphMutation.mutateAsync(graphData);
         if (result.success && result.data) {
           const newGraph = result.data;
@@ -359,7 +341,6 @@ const Editor: React.FC<EditorProps> = ({ graph }) => {
     getCurrentState,
   ]);
 
-  // Navigate back with confirmation if there are unsaved changes
   const handleBack = useCallback(() => {
     if (hasUnsavedChanges) {
       const confirmLeave = window.confirm(

@@ -29,7 +29,6 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Filter graphs based on search query
   const filteredGraphs = useMemo(() => {
     if (!searchQuery.trim()) return graphs;
     const query = searchQuery.toLowerCase();
@@ -66,7 +65,6 @@ const Dashboard = () => {
         const content = e.target?.result as string;
         const template = JSON.parse(content);
 
-        // Basic validation
         if (!template.nodes || !Array.isArray(template.nodes)) {
           throw new Error("Invalid template: missing nodes");
         }
@@ -92,7 +90,6 @@ const Dashboard = () => {
         toast.error("Failed to upload template: " + (error as Error).message);
       }
 
-      // Reset input
       if (fileInputRef.current) fileInputRef.current.value = "";
     };
     reader.readAsText(file);

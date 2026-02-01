@@ -23,7 +23,6 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
       }
     };
 
-    // Use capture phase to ensure we handle the event even if propagation is stopped
     document.addEventListener("mousedown", handleClickOutside, true);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside, true);

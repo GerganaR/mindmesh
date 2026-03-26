@@ -17,8 +17,8 @@ Built with a focus on performance and interactivity, MindMesh bridges the gap be
 
 ## 🌐 Live Demo
 
-- **Status**: 🚧 Under Development / Run Locally
-- **Deployment**: Coming Soon
+- **Status**: 🟢 Live
+- **Deployment**: [https://mindmesh-rust.vercel.app/](https://mindmesh-rust.vercel.app/)
 
 ---
 
